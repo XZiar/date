@@ -204,6 +204,23 @@ static CONSTDATA char folder_delimiter = '/';
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif  // defined(__GNUC__) && __GNUC__ < 5
 
+
+std::pair<const char*, size_t> tz_get_file_data(std::string_view name) noexcept;
+
+struct membuf : public std::streambuf 
+{
+    membuf(const char* p, size_t s) 
+    {
+        const auto ptr = const_cast<char*>(p);
+        setg(ptr, ptr, ptr + s);
+    }
+};
+
+#if AUTO_DOWNLOAD
+#   error "not support AUTO_DOWNLOAD" 
+#endif
+
+
 #if !USE_OS_TZDB
 
 #  ifdef _WIN32
@@ -740,13 +757,15 @@ native_to_standard_timezone_name(const std::string& native_tz_name,
 // See timezone_mapping structure for more info.
 static
 std::vector<detail::timezone_mapping>
-load_timezone_mappings_from_xml_file(const std::string& input_path)
+load_timezone_mappings_from_xml_file()
 {
+    std::string_view input_path = "windowsZones.xml";
     std::size_t line_num = 0;
     std::vector<detail::timezone_mapping> mappings;
     std::string line;
 
-    file_streambuf ibuf(input_path);
+    const auto [ptr, size] = tz_get_file_data(input_path);
+    membuf ibuf(ptr, size);
     std::istream is(&ibuf);
 
     auto error = [&input_path, &line_num](const char* info)
@@ -3755,13 +3774,19 @@ get_version(const std::string& path)
     throw std::runtime_error("Unable to get Timezone database version from " + path);
 }
 
+static std::string get_version()
+{
+    const auto [ptr, size] = tz_get_file_data("version");
+    return ptr;
+}
+
 static
 std::unique_ptr<tzdb>
 init_tzdb()
 {
     using namespace date;
-    const std::string install = get_install();
-    const std::string path = install + folder_delimiter;
+    // const std::string install = get_install();
+    // const std::string path = install + folder_delimiter;
     std::string line;
     bool continue_zone = false;
     std::unique_ptr<tzdb> db(new tzdb);
@@ -3805,31 +3830,31 @@ init_tzdb()
         }
     }
 #else  // !AUTO_DOWNLOAD
-    if (!file_exists(install))
-    {
-        std::string msg = "Timezone database not found at \"";
-        msg += install;
-        msg += "\"";
-        throw std::runtime_error(msg);
-    }
-    db->version = get_version(path);
+    // if (!file_exists(install))
+    // {
+    //     std::string msg = "Timezone database not found at \"";
+    //     msg += install;
+    //     msg += "\"";
+    //     throw std::runtime_error(msg);
+    // }
+    db->version = get_version();
 #endif  // !AUTO_DOWNLOAD
 
     CONSTDATA char*const files[] =
     {
-        "africa", "antarctica", "asia", "australasia", "backward", "etcetera", "europe",
-        "pacificnew", "northamerica", "southamerica", "systemv", "leapseconds"
+        "africa", "antarctica", "asia", "australasia", "backward", "backzone", "etcetera", "europe",
+        "northamerica", "southamerica", "leapseconds"
     };
 
     for (const auto& filename : files)
     {
-        std::string file_path = path + filename;
-        if (!file_exists(file_path))
+        const auto [ptr, size] = tz_get_file_data(filename);
+        if (size == 0)
         {
-          continue;
+            continue;
         }
-        file_streambuf inbuf(file_path);
-        std::istream infile(&inbuf);
+        membuf ibuf(ptr, size);
+        std::istream infile(&ibuf);
         while (infile)
         {
             std::getline(infile, line);
@@ -3867,7 +3892,7 @@ init_tzdb()
                 {
                     continue;
                 }
-                else
+                else if (!word.empty())
                 {
                     std::cerr << line << '\n';
                 }
@@ -3884,8 +3909,7 @@ init_tzdb()
     db->leap_seconds.shrink_to_fit();
 
 #ifdef _WIN32
-    std::string mapping_file = get_install() + folder_delimiter + "windowsZones.xml";
-    db->mappings = load_timezone_mappings_from_xml_file(mapping_file);
+    db->mappings = load_timezone_mappings_from_xml_file();
     sort_zone_mappings(db->mappings);
 #endif // _WIN32
 
