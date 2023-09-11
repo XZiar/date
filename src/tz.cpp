@@ -165,7 +165,7 @@ struct index_entry_t {
 #  endif  // HAS_REMOTE_API
 #else   // !_WIN32
 #  include <unistd.h>
-#  if !USE_OS_TZDB && !defined(INSTALL)
+#  if !USE_OS_TZDB && !defined(INSTALL) && !defined(__ANDROID__)
 #    include <wordexp.h>
 #  endif
 #  include <limits.h>
@@ -308,7 +308,7 @@ get_download_folder()
 #    endif // WINRT
 #  else // !_WIN32
 
-#    if !defined(INSTALL)
+#    if !defined(INSTALL) && 0
 
 static
 std::string
@@ -432,7 +432,7 @@ namespace date
 using namespace detail;
 
 #if !USE_OS_TZDB
-
+/*
 static
 std::string&
 access_install()
@@ -469,6 +469,8 @@ get_install()
     static const std::string& ref = access_install();
     return ref;
 }
+*/
+void set_install(const std::string& install) {}
 
 #if HAS_REMOTE_API
 static
