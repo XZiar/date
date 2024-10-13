@@ -194,9 +194,9 @@ struct index_entry_t {
 
 #ifdef _WIN32
 static CONSTDATA char folder_delimiter = '\\';
-#elif !defined(ANDROID) && !defined(__ANDROID__)
+#elif (!defined(ANDROID) && !defined(__ANDROID__)) || !USE_OS_TZDB
 static CONSTDATA char folder_delimiter = '/';
-#endif  // !defined(WIN32) && !defined(ANDROID) && !defined(__ANDROID__)
+#endif  // !defined(WIN32) && (!defined(ANDROID) && !defined(__ANDROID__)) || !USE_OS_TZDB
 
 #if defined(__GNUC__) && __GNUC__ < 5
    // GCC 4.9 Bug 61489 Wrong warning with -Wmissing-field-initializers
@@ -574,9 +574,9 @@ get_tz_dir()
 static_assert(min_year <= max_year, "Configuration error");
 #endif
 
-#if !defined(ANDROID) && !defined(__ANDROID__)
+#if (!defined(ANDROID) && !defined(__ANDROID__)) || !USE_OS_TZDB
 static std::unique_ptr<tzdb> init_tzdb();
-#endif // !defined(ANDROID) && !defined(__ANDROID__)
+#endif // (!defined(ANDROID) && !defined(__ANDROID__)) || !USE_OS_TZDB
 
 tzdb_list::~tzdb_list()
 {
@@ -635,7 +635,7 @@ get_tzdb_list()
     return tz_db;
 }
 
-#if !defined(ANDROID) && !defined(__ANDROID__)
+#if (!defined(ANDROID) && !defined(__ANDROID__)) || !USE_OS_TZDB
 inline
 static
 char
@@ -664,7 +664,7 @@ get_alpha_word(std::istream& in)
         s.push_back(static_cast<char>(in.get()));
     return s;
 }
-#endif // !defined(ANDROID) && !defined(__ANDROID__)
+#endif // (!defined(ANDROID) && !defined(__ANDROID__)) || !USE_OS_TZDB
 
 inline
 static
@@ -675,7 +675,7 @@ is_prefix_of(std::string const& key, std::string const& value)
     return key.compare(0, size, value, 0, size) == 0;
 }
 
-#if !defined(ANDROID) && !defined(__ANDROID__)
+#if (!defined(ANDROID) && !defined(__ANDROID__)) || !USE_OS_TZDB
 static
 unsigned
 parse_month(std::istream& in)
@@ -695,7 +695,7 @@ parse_month(std::istream& in)
         throw std::runtime_error("oops: bad month name: " + s);
     return static_cast<unsigned>(++m);
 }
-#endif // !defined(ANDROID) && !defined(__ANDROID__)
+#endif // (!defined(ANDROID) && !defined(__ANDROID__)) || !USE_OS_TZDB
 
 #if !USE_OS_TZDB
 
@@ -2921,7 +2921,7 @@ operator<<(std::ostream& os, const leap_second& x)
 
 #if USE_OS_TZDB
 
-#if !defined(ANDROID) && !defined(__ANDROID__)
+#if (!defined(ANDROID) && !defined(__ANDROID__)) || !USE_OS_TZDB
 static
 std::string
 get_version()
@@ -3025,7 +3025,7 @@ find_read_and_leap_seconds()
 #endif
     return {};
 }
-#endif // !defined(ANDROID) && !defined(__ANDROID__)
+#endif // (!defined(ANDROID) && !defined(__ANDROID__)) || !USE_OS_TZDB
 
 static
 std::unique_ptr<tzdb>
