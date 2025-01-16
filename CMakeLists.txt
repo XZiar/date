@@ -17,7 +17,7 @@
 
 cmake_minimum_required( VERSION 3.7 )
 
-project( date VERSION 3.0.1 )
+project( date VERSION 3.0.3 )
 set(ABI_VERSION 3) # used as SOVERSION, increment when ABI changes
 
 get_directory_property( has_parent PARENT_DIRECTORY )
@@ -172,8 +172,7 @@ if( BUILD_TZ_LIB )
     endif( )
     if( NOT USE_SYSTEM_TZ_DB AND NOT MANUAL_TZ_DB )
         find_package( CURL REQUIRED )
-        target_include_directories( date-tz SYSTEM PRIVATE ${CURL_INCLUDE_DIRS} )
-        target_link_libraries( date-tz PRIVATE ${CURL_LIBRARIES} )
+        target_link_libraries( date-tz PRIVATE CURL::libcurl )
     endif( )
 endif( )
 
